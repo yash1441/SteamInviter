@@ -46,7 +46,7 @@ public cmdInvite(client)
 	char steamID64[32];
 	GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64);
 	sources[client] = GetCmdReplySource();
-	SteamGroupInvite(client, steamID64, steamGroup, callback);
+	SteamGroupInvite(0, client, steamID64, steamGroup, callback);
 	PrintToServer("Invited %n to the Steam group.", id);
 	
 	return;				
