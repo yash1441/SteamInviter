@@ -1,3 +1,4 @@
+// Adding print to console functions for debugging
 #pragma semicolon 1
 
 #include <sourcemod>
@@ -38,13 +39,17 @@ public cmdInvite(client)
 	GetConVarString(cvarGroupID, steamGroup, sizeof(steamGroup));
 	if (StrEqual(steamGroup, "")) 
 	{ 
-		ReplyToCommand(client, "Steam group is not configured.");
+		PrintToServer("Steam group is not configured.");
 		return;
 	}
 
 	int id = GetSteamAccountID(client);
 	char steamID64[32];
-	GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64);
+	if (GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64) == false)
+	{
+		PrintToServer("[DEBUG] Can't get SteamID64 of %N.", client);
+	}
+	else PrintToServer("[DEBUG] %N (%s) connected.", client, steamID64);
 	sources[client] = GetCmdReplySource();
 	SteamGroupInvite(0, steamID64, steamGroup, callback);
 	PrintToServer("Invited %n to the Steam group.", id);
@@ -54,19 +59,23 @@ public cmdInvite(client)
 
 public callback(client, bool success, errorCode, any data)
 {
-	if (client != 0 && !IsClientInGame(client)) return;
+	if (client != 0 && !IsClientInGame(client))
+	{
+		PrintToServer("[DEBUG] %N is not in the game or invalid.", client);
+		return;
+	}
 	
 	SetCmdReplySource(sources[client]);
-	if (success) ReplyToCommand(client, "The group invite has been sent.");
+	if (success) PrintToServer(client, "The group invite has been sent.");
 	else
 	{
+		PrintToServer("Error");
 		switch(errorCode)
 		{
-			case 0x01:	ReplyToCommand(client, "Server is busy with another task at this time, try again in a few seconds.");
-			case 0x02:	ReplyToCommand(client, "There was a timeout in your request, try again.");
-			case 0x23:	ReplyToCommand(client, "Session expired, retry to reconnect.");
-			case 0x27:	ReplyToCommand(client, "Target has already received an invite or is already on the group.");
-			default:	ReplyToCommand(client, "There was an error \x010x%02x while sending your invite :(", errorCode);
+			case 0x01:	PrintToServer("Server is busy with another task at this time, try again in a few seconds.");
+			case 0x02:	PrintToServer("Session expired, retry to reconnect.");
+			case 0x27:	PrintToServer("Target has already received an invite or is already on the group.");
+			default:	PrintToServer("There was an error \x010x%02x while sending your invite :(", errorCode);
 		}
 	}
 }
