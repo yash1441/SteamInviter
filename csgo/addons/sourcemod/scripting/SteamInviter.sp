@@ -66,7 +66,7 @@ public callback(client, bool success, errorCode, any data)
 	}
 	
 	SetCmdReplySource(sources[client]);
-	if (success) PrintToServer(client, "The group invite has been sent.");
+	if (success) PrintToServer("The group invite has been sent.");
 	else
 	{
 		PrintToServer("Error");
