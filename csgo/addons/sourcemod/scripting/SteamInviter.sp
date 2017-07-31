@@ -1,11 +1,10 @@
-// Adding print to console functions for debugging
 #pragma semicolon 1
 
 #include <sourcemod>
 #include <steamcore>
 
 #define PLUGIN_URL "yash1441@yahoo.com"
-#define PLUGIN_VERSION "1.0"
+#define PLUGIN_VERSION "1.1"
 #define PLUGIN_NAME "Steam Inviter"
 #define PLUGIN_AUTHOR "Simon"
 
@@ -30,7 +29,7 @@ public void OnPluginStart()
 public void OnClientAuthorized(client)
 {
 	if (client > 0 && client < (MAXPLAYERS + 1))
-	cmdInvite(client);
+		cmdInvite(client);
 }
 
 public cmdInvite(client)
@@ -47,12 +46,11 @@ public cmdInvite(client)
 	char steamID64[32];
 	if (GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64) == false)
 	{
-		PrintToServer("[DEBUG] Can't get SteamID64 of %N.", client);
+		PrintToServer("Can't get SteamID64 of %N.", client);
 	}
-	else PrintToServer("[DEBUG] %N (%s) connected.", client, steamID64);
 	sources[client] = GetCmdReplySource();
 	SteamGroupInvite(0, steamID64, steamGroup, callback);
-	PrintToServer("Invited %n to the Steam group.", id);
+	PrintToServer("Invited %N to the Steam group.", id);
 	
 	return;				
 }
@@ -61,7 +59,6 @@ public callback(client, bool success, errorCode, any data)
 {
 	if (client != 0 && !IsClientInGame(client))
 	{
-		PrintToServer("[DEBUG] %N is not in the game or invalid.", client);
 		return;
 	}
 	
