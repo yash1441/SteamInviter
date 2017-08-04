@@ -48,11 +48,39 @@ public cmdInvite(client)
 	{
 		PrintToServer("Can't get SteamID64 of %N.", client);
 	}
+	
+	if(SteamAccountAddFriend(0, steamID64, callback2))
+		PrintToServer("Added %N as friend.", id);
+	else PrintToServer("Failed to add %N as friend.", id);
+	
 	sources[client] = GetCmdReplySource();
-	SteamGroupInvite(0, steamID64, steamGroup, callback);
-	PrintToServer("Invited %N to the Steam group.", id);
+	
+	if(SteamGroupInvite(0, steamID64, steamGroup, callback))
+		PrintToServer("Invited %N to the Steam group.", id);
+	else PrintToServer("Failed to invite %N to the Steam group.", id);
 	
 	return;				
+}
+
+public callback2(client, bool success, errorCode, any data)
+{
+	if (client != 0 && !IsClientInGame(client))
+	{
+		return;
+	}
+	if (success) PrintToServer("The friend invite has been sent.");
+	else
+	{
+		PrintToServer("Error");
+		switch(errorCode)
+		{
+			case 0x01:	PrintToServer("Server is busy with another task at this time, try again in a few seconds.");
+			case 0x02:	PrintToServer("Session expired, retry to reconnect.");
+			case 0x30:	PrintToServer("Failed http friend request.");
+			case 0x31:	PrintToServer("Friend request not sent.");
+			default:	PrintToServer("There was an error \x010x%02x while sending your friend request :(", errorCode);
+		}
+	}
 }
 
 public callback(client, bool success, errorCode, any data)
