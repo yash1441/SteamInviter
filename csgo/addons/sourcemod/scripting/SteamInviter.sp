@@ -4,7 +4,7 @@
 #include <steamcore>
 
 #define PLUGIN_URL "yash1441@yahoo.com"
-#define PLUGIN_VERSION "1.1"
+#define PLUGIN_VERSION "1.2"
 #define PLUGIN_NAME "Steam Inviter"
 #define PLUGIN_AUTHOR "Simon"
 
