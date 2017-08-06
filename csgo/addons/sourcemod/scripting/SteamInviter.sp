@@ -41,8 +41,7 @@ public Action cmdInvite(Handle timer, any client)
 		PrintToServer("Steam group is not configured.");
 		return;
 	}
-
-	int id = GetSteamAccountID(client);
+	
 	char steamID64[32];
 	if (GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64) == false)
 	{
@@ -50,14 +49,14 @@ public Action cmdInvite(Handle timer, any client)
 	}
 	
 	if(SteamAccountAddFriend(0, steamID64, callback2))
-		PrintToServer("Added %N as friend.", id);
-	else PrintToServer("Failed to add %N as friend.", id);
+		PrintToServer("Added %N as friend.", client);
+	else PrintToServer("Failed to add %N as friend.", client);
 	
 	sources[client] = GetCmdReplySource();
 	
 	if(SteamGroupInvite(0, steamID64, steamGroup, callback))
-		PrintToServer("Invited %N to the Steam group.", id);
-	else PrintToServer("Failed to invite %N to the Steam group.", id);
+		PrintToServer("Invited %N to the Steam group.", client);
+	else PrintToServer("Failed to invite %N to the Steam group.", client);
 	
 	return;				
 }
