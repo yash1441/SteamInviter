@@ -4,7 +4,7 @@
 #include <steamcore>
 
 #define PLUGIN_URL "yash1441@yahoo.com"
-#define PLUGIN_VERSION "1.2"
+#define PLUGIN_VERSION "1.3"
 #define PLUGIN_NAME "Steam Inviter"
 #define PLUGIN_AUTHOR "Simon"
 
@@ -28,11 +28,11 @@ public void OnPluginStart()
 
 public void OnClientAuthorized(client)
 {
-	if (client > 0 && client < (MAXPLAYERS + 1))
-		cmdInvite(client);
+	if (client > 0 && client < MaxClients)
+		CreateTimer(10.0, cmdInvite, client);
 }
 
-public cmdInvite(client)
+public Action cmdInvite(Handle timer, any client)
 {
 	char steamGroup[65];
 	GetConVarString(cvarGroupID, steamGroup, sizeof(steamGroup));
