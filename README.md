@@ -1,5 +1,5 @@
 # SteamInviter
-Invite players to Steam Group on joining the server
+Invites players to add as friend and invite to group.
 
 
 # Requirements
