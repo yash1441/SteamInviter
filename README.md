@@ -13,6 +13,8 @@ Invite players to Steam Group on joining the server
 - ```sc_username``` "enter steam account username here"
 - ```sc_password``` "enter steam account password here"
 - ```si_steamgroupid``` "enter ID of the Steam Group where players will be invited"
+- ```si_friend_enable``` "enable or disable add as driend feature"
+- ```si_group_enable``` "enable or disable invite to group feature"
 
 
 # External Links
