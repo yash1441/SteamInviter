@@ -13,7 +13,7 @@ Invites players to add as friend and invite to group.
 - ```sc_username``` "enter steam account username here"
 - ```sc_password``` "enter steam account password here"
 - ```si_steamgroupid``` "enter ID of the Steam Group where players will be invited"
-- ```si_friend_enable``` "enable or disable add as driend feature"
+- ```si_friend_enable``` "enable or disable add as friend feature"
 - ```si_group_enable``` "enable or disable invite to group feature"
 
 
