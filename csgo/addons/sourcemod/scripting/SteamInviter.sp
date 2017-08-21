@@ -5,18 +5,15 @@
 #include <sdkhooks>
 
 #define PLUGIN_URL "yash1441@yahoo.com"
-#define PLUGIN_VERSION "1.5"
+#define PLUGIN_VERSION "1.6"
 #define PLUGIN_NAME "Steam Inviter"
 #define PLUGIN_AUTHOR "Simon"
-
-bool FirstSpawn[MAXPLAYERS + 1] =  { false, ... };
-bool SecondSpawn[MAXPLAYERS + 1] =  { false, ... };
 
 public Plugin myinfo = 
 {
 	name = PLUGIN_NAME,
 	author = PLUGIN_AUTHOR,
-	description = "Invites players to add as friend and add to group.",
+	description = "Invites players to add as friend and invite to group.",
 	version = PLUGIN_VERSION,
 	url = PLUGIN_URL
 }
@@ -36,52 +33,20 @@ public void OnPluginStart()
 		LogError("Failed to hook player_spawn.");
 }
 
-public void OnClientPostAdminCheck(client)
+public int OnSteamAccountLoggedIn()
 {
-	if (IsValidClient(client))
-	{
-		FirstSpawn[client] = true;
-		SecondSpawn[client] = false;
-	}
+	PrintToServer("Steam account logged in successfully.");
 }
 
 public Action OnPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (!IsValidClient(client)) return Plugin_Continue;
-	if(IsSteamCoreBusy())
-	{
-		PrintToServer("Steam Core is busy, couldn't invite to group.");
-		return Plugin_Continue;
-	}
-	if (FirstSpawn[client])
-	{
-		InviteFriend(client);
-		return Plugin_Continue;
-	}
-	if (SecondSpawn[client])
+	if (IsSteamAccountLogged())
 	{
 		InviteGroup(client);
-		return Plugin_Continue;
 	}
 	return Plugin_Continue;
-}
-
-public void InviteFriend(int client)
-{
-	char steamID64[32];
-	if (GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64) == false)
-	{
-		PrintToServer("Can't get SteamID64 of %N.", client);
-		return;
-	}
-	FirstSpawn[client] = false;
-	SecondSpawn[client] = true;
-	if (!GetConVarBool(AddFriend)) return;
-	sources[client] = GetCmdReplySource();
-	if (SteamAccountAddFriend(0, steamID64, AddFriendCallback))
-		PrintToServer("Added %N as friend.", client);
-	else PrintToServer("Failed to add %N as friend.", client);
 }
 
 public void InviteGroup(int client)
@@ -92,7 +57,6 @@ public void InviteGroup(int client)
 		PrintToServer("Can't get SteamID64 of %N.", client);
 		return;
 	}
-	SecondSpawn[client] = false;
 	if (!GetConVarBool(AddGroup)) return;
 	char steamGroup[65];
 	GetConVarString(cvarGroupID, steamGroup, sizeof(steamGroup));
@@ -102,51 +66,65 @@ public void InviteGroup(int client)
 		return;
 	}
 	sources[client] = GetCmdReplySource();
-	if(SteamGroupInvite(0, steamID64, steamGroup, AddGroupCallback))
+	if(SteamCommunityGroupInvite(steamID64, steamGroup, client))
 		PrintToServer("Invited %N to the Steam group.", client);
-	else PrintToServer("Failed to invite %N to the Steam group.", client);
+	else PrintToServer("Failed to invite %N to the Steam group. Not logged in.", client);
 }
 
-public AddFriendCallback(int client, bool success, int errorCode, any data)
+public int OnCommunityGroupInviteResult(const char[] invitee, const char[] group, int errorCode, any client)
 {
-	if (client != 0 && !IsClientInGame(client))
-	{
-		return;
-	}
-	if (success) PrintToServer("The friend invite has been sent.");
-	else
-	{
-		PrintToServer("Error");
-		switch(errorCode)
-		{
-			case 0x01:	PrintToServer("Server is busy with another task at this time, try again in a few seconds.");
-			case 0x02:	PrintToServer("Session expired, retry to reconnect.");
-			case 0x30:	PrintToServer("Failed http friend request.");
-			case 0x31:	PrintToServer("Friend request not sent.");
-			default:	PrintToServer("There was an error \x010x%02x while sending your friend request :(", errorCode);
-		}
-	}
-}
-
-public AddGroupCallback(int client, bool success, int errorCode, any data)
-{
-	if (client != 0 && !IsClientInGame(client))
-	{
-		return;
-	}
-	
 	SetCmdReplySource(sources[client]);
-	if (success) PrintToServer("The group invite has been sent.");
-	else
+	switch(errorCode)
 	{
-		PrintToServer("Error");
-		switch(errorCode)
-		{
-			case 0x01:	PrintToServer("Server is busy with another task at this time, try again in a few seconds.");
-			case 0x02:	PrintToServer("Session expired, retry to reconnect.");
-			case 0x27:	PrintToServer("Target has already received an invite or is already on the group.");
-			default:	PrintToServer("There was an error \x010x%02x while sending your invite :(", errorCode);
+		case 0x00:	PrintToServer("General: No error, request successful.");
+		case 0x01:	PrintToServer("General: Logged out, plugin will attempt to login.");
+		case 0x02:	PrintToServer("General: Connection timed out.");
+		case 0x03:	PrintToServer("General: Steam servers down.");
+		case 0x20:	PrintToServer("Invite Error: Failed http group invite request.");
+		case 0x21:	PrintToServer("Invite Error: Incorrect invitee or another error.");
+		case 0x22:	PrintToServer("Invite Error: Incorrect Group ID or missing data.");
+		case 0x23:	PrintToServer("Invite Error: (LEGACY, no longer used)");
+		case 0x24:	PrintToServer("Invite Error: SteamCore account is not a member of the group or does not have permissions to invite.");
+		case 0x25:	PrintToServer("Invite Error: Limited account. Only full Steam accounts can send Steam group invites");
+		case 0x26:	PrintToServer("Invite Error: Unkown error. Check https://github.com/polvora/SteamCore/issues/6");
+		case 0x27:	PrintToServer("Invite Error: Invitee has already received an invite or is already on the group.");
+		case 0x28:	{
+			PrintToServer("Invite Error: Invitee must be friends with the SteamCore account to receive an invite.");
+			InviteFriend(client);
 		}
+		default:	PrintToServer("There was an error \x010x%02x while sending your invite :(", errorCode);
+	}
+}
+
+public void InviteFriend(int client)
+{
+	char steamID64[32];
+	if (GetClientAuthId(client, AuthId_SteamID64, steamID64, sizeof steamID64) == false)
+	{
+		PrintToServer("Can't get SteamID64 of %N.", client);
+		return;
+	}
+	if (!GetConVarBool(AddFriend)) return;
+	sources[client] = GetCmdReplySource();
+	if (SteamCommunityAddFriend(steamID64, client))
+		PrintToServer("Added %N as friend.", client);
+	else PrintToServer("Failed to add %N as friend. Not logged in.", client);
+}
+
+public int OnCommunityAddFriendResult(const char[] friend, errorCode, any client)
+{
+	SetCmdReplySource(sources[client]);
+	switch(errorCode)
+	{
+		case 0x00:	PrintToServer("General: No error, request successful.");
+		case 0x01:	PrintToServer("General: Logged out, plugin will attempt to login.");
+		case 0x02:	PrintToServer("General: Connection timed out.");
+		case 0x03:	PrintToServer("General: Steam servers down.");
+		case 0x30:	PrintToServer("Friend Add Error: Failed http friend request.");
+		case 0x31:	PrintToServer("Friend Add Error: Invited account ignored the friend request.");
+		case 0x32:	PrintToServer("Friend Add Error: Invited account has blocked the SteamCore account.");
+		case 0x33:	PrintToServer("Friend Add Error: SteamCore account is limited. Only full Steam accounts can send friend requests.");
+		default:	PrintToServer("There was an error \x010x%02x while sending your friend request :(", errorCode);
 	}
 }
 
